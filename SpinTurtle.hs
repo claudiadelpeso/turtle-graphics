@@ -8,19 +8,19 @@ import Turtle (Instruction, forward, right, forever, lifespan, (>*>), die)
 
 -- | Finite spiral: stops at 100 steps and turns with angle "angle" to the right
 spiral :: Double -> Double -> Instruction 
-spiral size angle | size > 100 = die 
+spiral size angle | size > 100 = die
                   | otherwise = do 
                     forward size >*> right angle >*> spiral (size+2) angle
 
 -- | Infinite spiral that rotates right with angle "angle"
-infiniteSpiral :: Double -> Double -> Instruction 
+infiniteSpiral :: Double -> Double -> Instruction
 infiniteSpiral size angle = 
     forward size >*> right angle >*> infiniteSpiral size angle
 
 
 -- | Can you define the limited version in terms of the unlimited one? Yes
-limitedV :: Double -> Double -> Int -> Instruction 
-limitedV size angle int  = lifespan int [infiniteSpiral size angle]
+limitedV :: Double -> Double -> Int -> Instruction
+limitedV size angle int  = lifespan int [(infiniteSpiral size angle)]
 
 {- |
 the limited function takes an integer "time" and "program" as input and returns

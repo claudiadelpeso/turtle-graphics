@@ -31,17 +31,21 @@ runTurtle :: [Instruction] -> Bool ->  Maybe HGL.Window -> StateT TT IO()
 runTurtle [] b w = do 
                       case w of 
                         Nothing -> return()
-                        Just e -> do   
-                              lift $ HGL.getKey e
-                              lift $ HGL.closeWindow e
+                        Just e -> do 
+                              turtle <- get 
+                              case parallel turtle of 
+                                    True -> return ()
+                                    False -> do 
+                                          lift $ HGL.getKey e
+                                          lift $ HGL.closeWindow e
 
 runTurtle ((Move s):ps) b w = do 
     turtle <- get 
     let (currentPos, newPos) = getNewPos (pos turtle) s (angle turtle)
     case b of 
-      True ->  when (pen turtle) $ lift $ HGL.drawInWindow (fromJust w) $ HGL.withRGB (toHglColor (col turtle)) $ HGL.line currentPos newPos    -- ^ draw line from pos to new position
+      True ->  when (pen turtle) $ lift $ HGL.drawInWindow (fromJust w) $ HGL.withRGB (toHglColor (col turtle)) $ HGL.line (pos turtle) newPos    -- ^ draw line from pos to new position
       False -> lift $ putStrLn $ "At time "++ show (time turtle) ++ " turtle moves from " ++ show (pos turtle) ++ " to "  ++ show newPos  
-    put $ TT{pos = newPos, angle = angle turtle, pen = pen turtle, col = col turtle, time = (time turtle)+1} -- ^ update position and time
+    put $ turtle{pos = newPos, time = (time turtle)+1} -- ^ update position and time
     runTurtle ps b w 
 
 runTurtle ((Rotate d):ps) b w = do 
@@ -49,7 +53,7 @@ runTurtle ((Rotate d):ps) b w = do
       case b of 
             True -> return()-- do nothing
             False -> lift $ putStrLn $ "At time " ++ show (time turtle) ++ " turtle rotates " ++ show d ++ " degrees" 
-      put $ TT{pos = pos turtle, angle = (angle turtle)+d, pen = pen turtle, col = col turtle, time = (time turtle)+1}
+      put $ turtle{ angle = (angle turtle)+d, time = (time turtle)+1}
       runTurtle ps b w 
 
 runTurtle (Stop:ps) b w = do 
@@ -57,14 +61,15 @@ runTurtle (Stop:ps) b w = do
       case b of 
             True -> return()-- do nothing
             False -> lift $ putStrLn $ "At time " ++ show (time turtle) ++ " turtle puts pen up "
-      put $ TT{pos = pos turtle, angle = angle turtle, pen = False, col = col turtle, time = (time turtle)+1}
+      put $ turtle{pen = False, time = (time turtle)+1}
       runTurtle ps b w   
+
 runTurtle (Start:ps) b w = do
       turtle <- get 
       case b of 
             True -> return()-- do nothing
             False -> lift $ putStrLn $ "At time " ++ show (time turtle) ++ " turtle puts pen down "
-      put $ TT{pos = pos turtle, angle = angle turtle, pen = True, col = col turtle, time = (time turtle)+1}
+      put $ turtle {pen = True, time = (time turtle)+1}
       runTurtle ps b w  
 
 
@@ -73,7 +78,7 @@ runTurtle ((C (RGB r g bb)):ps) b w = do
       case b of 
             True -> return()-- do nothing
             False -> lift $ putStrLn $ "At time " ++ show (time turtle) ++ " turtle changes pen color to " ++ show r ++ " " ++ show g ++ " " ++ show bb
-      put $ TT{pos = pos turtle, angle = angle turtle, pen = pen turtle, col = (RGB r g bb), time = (time turtle)+1}
+      put $ turtle {col = (RGB r g bb), time = (time turtle)+1}
       runTurtle ps b w 
 
 runTurtle (Die:_) b w = do 
@@ -91,7 +96,7 @@ runTurtle (Idle:ps) b w = do
           case b of 
                 True -> return()-- do nothing
                 False -> lift $ putStrLn $ "At time " ++ show (time turtle) ++ " turtle does nothing"
-          put $ TT{pos = pos turtle, angle = angle turtle, pen = pen turtle, col = col turtle, time = (time turtle)+1}
+          put $ turtle{time = (time turtle)+1}
           runTurtle ps b w 
 
 runTurtle ((StopAfter t inst):ps) b w = do 
@@ -105,15 +110,17 @@ runTurtle ((DieAfter t inst):ps) b w =  do
 
 runTurtle ((Repeat n inst):ps) b w = do 
       turtle <- get 
-      runTurtle ((replicate n inst) ++ ps) b w
-
+      runTurtle ((replicate n inst)++ ps) b w
 
 runTurtle ((Sequence p1 p2):ps) b w = do 
-          turtle <- get 
           runTurtle (p1:p2:ps) b w 
 
--- | Do not know how to implement this so that two different things get drawn
 runTurtle ((Parallel p1 p2):ps) b w = do 
-           runTurtle [p1] b w 
-           runTurtle [p2] b w 
-           runTurtle ps b w
+  turtle <- get
+  put $ turtle {parallel=True}
+  runTurtle [p1] b w
+  put turtle{parallel=False}
+  case b of 
+      True -> return ()
+      False -> lift $ putStrLn "And another turtle "
+  runTurtle [p2] b w

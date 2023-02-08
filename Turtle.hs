@@ -8,7 +8,6 @@ Note: rotations are meassured in radians and not degrees.
 
 module Turtle (
 -- Abstract datatype and other data types for turtle program 
-Program,
 Instruction(..),
 Color (RGB),
 TT(..), 
@@ -46,12 +45,12 @@ import Data.Word
 -- | Instruction data type: It describes all the possible actions that the turtle can do.
 -- we then implement functions that use this constructors to do actions.
 data Instruction =  Move Double | Rotate Double | Stop | Start | C Color |
-               Die | Idle | StopAfter Int [Instruction] | DieAfter Int [Instruction] | 
+               Die | Idle | StopAfter Int Program | DieAfter Int Program | 
                Repeat Int Instruction | Sequence Instruction Instruction | Parallel Instruction Instruction
 
 -- | Program data type: It holds a list of instructions. 
 -- We implemented like this because a turtle will want to do several actions together not just one. 
-type Program = [Instruction] 
+type Program = [Instruction]
 
 -- | Point data type
 type Point = (Int, Int)
@@ -62,7 +61,8 @@ data TT = TT {
   angle  :: Double, 
   pen    :: Bool, 
   col    :: Color, 
-  time   :: Int
+  time   :: Int, 
+  parallel :: Bool
 } 
 -- | PRIMITIVE OPERATIONS
 -- | move forward the gven number of steps
@@ -91,11 +91,9 @@ color (RGB r g b)= C (RGB r g b)
 die :: Instruction 
 die = Die 
 
-
-
 -- | makes the turtle stop what it is doing after a specified period of time (t)
 limited :: Int -> Program -> Instruction 
-limited = StopAfter
+limited  = StopAfter
 
 -- | kills the turtle program after a specified period of time (t)
 lifespan :: Int -> Program -> Instruction 
@@ -107,10 +105,13 @@ times :: Int -> Instruction -> Instruction
 times = Repeat 
 
 -- | Sequencing operator: it performs instrutions/commands one after another
+
+infixl 7 >*>
 (>*>) :: Instruction -> Instruction -> Instruction 
 (>*>) = Sequence
 
 -- | Parallel composition combinator 
+infixl 6 <|>
 (<|>) :: Instruction -> Instruction -> Instruction 
 (<|>) = Parallel 
 

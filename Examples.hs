@@ -23,11 +23,16 @@ example4 :: [Instruction]
 example4 = [forward 100, color (RGB 255 255 0), idle, forever (forward 100), die, right 1.5708, pendown, forward 100, right 1.5708, pendown, forward 100, left 0.785398, backward 140]
 
 -- | Using Parallel composition
+example5 :: [Instruction]
 example5 = [forward 10, right 45, pendown, (<|>) (forward 200) ((<|>) (right 20) (color (RGB 255 255 0)))]
+example6 :: [Instruction]
 example6 = [forward 10, right 45, pendown, (<|>) (forward 200) ((<|>) (forward 200) die), right 90, color (RGB 0 255 0), backward 100]
 
 -- | Program that repeats an action and uses limited
-example 7 = [forward 10, right 45, pendown, (<|>) (limited 3 [(forward 100),backward 200, color (RGB 0 0 255)]) (limited 3 [(forward 100),backward 200, color (RGB 10 100 200)]), right 10, idle, color (RGB 255 255 0), backward 100] 
+example7 :: [Instruction]
+example7 = [forward 10, right 45, pendown, (<|>) (limited 3 [(forward 100),backward 200, color (RGB 0 0 255)]) (limited 3 [(forward 100),backward 200, color (RGB 10 100 200)]), right 10, idle, color (RGB 255 255 0), backward 100] 
+
 
 -- | A program that uses everything 
+example8 :: [Instruction]
 example8 = [forward 100, right 1.5708, times 2 (forward 50), right 1.5708, forward 100, right 1.5708, times 2 (forward 50), right 1.5708, color (RGB 0 0 255),  (>*>) (right 2.35619) (backward 70.7107), right 1.5708, backward 70.7107]
